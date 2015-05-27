@@ -19,5 +19,5 @@ $(EXECUTABLE): $(OBJECTS)
 clean:
 	rm -rf $(OBJECTS) $(EXECUTABLE)
 
-test: $(EXECUTABLE)
+tests: $(EXECUTABLE)
 	./$(EXECUTABLE) 5 8
