@@ -1,0 +1,23 @@
+# Ignore everything, except...
+*
+
+# C's source files
+!*.c
+
+# Bash's scripts
+!*.sh
+
+# Python's source files
+!*.py
+
+# Python's requirements.txt file
+!requirements.txt
+
+# Makefile
+!Makefile
+
+# Standard Workload Format's files
+!*.swf
+
+# This file
+!*.gitignore
