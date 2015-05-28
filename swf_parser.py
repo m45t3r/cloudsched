@@ -47,23 +47,12 @@ def parse_swf_file(filename):
         result_data = csv.DictReader(clean_file, fieldnames=swf_data_fields,
                                      delimiter=' ', skipinitialspace=True,
                                      quoting=csv.QUOTE_NONNUMERIC)
-    return result_data
+    return list(result_data)
 
 
 if __name__ == "__main__":
-    # Testing program with an arbitrary .swf file
-    total_time = 0
     count = 0
-    for trace_data in parse_swf_file("UniLu-Gaia-2014-2.swf"):
-        # Using only 500 tasks
-        if count >= 500:
-            break
-        task_time = trace_data['run_time'] * trace_data['number_of_allocated_processors']
-        # Only show tasks that completed sucessful with up-to
-        # 5 minutes of duration
-        if trace_data['status'] == 1 and task_time <= 300:
-            pprint(trace_data)
-            total_time += task_time
-            count += 1
+    for task in parse_swf_file("UniLu-Gaia-2014-2.swf"):
+        pprint(task)
+        count += 1
     print("Number of entries:", count)
-    print("Total run-time in hours:", total_time/32/3600)
