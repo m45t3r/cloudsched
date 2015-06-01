@@ -1,13 +1,34 @@
 #!/usr/bin/env python
 
-import random
+from __future__ import print_function, division
+
+import copy
+import logging
 import math
+import random
 from pprint import pprint
 
 import numpy
 from matplotlib import pyplot
 
 from swf_parser import parse_swf_file
+
+
+logging.basicConfig(level=logging.DEBUG,
+                    format='%(asctime)s %(levelname)-8s %(message)s',
+                    datefmt='%m-%d %H:%M',
+                    filename='cloud_sched.log',
+                    filemode='w')
+# define a Handler which writes DEBUG messages or higher to the sys.stderr
+console = logging.StreamHandler()
+console.setLevel(logging.DEBUG)
+# set a format which is simpler for console use
+formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
+# tell the handler to use this format
+console.setFormatter(formatter)
+# add the handler to the root logger
+logging.getLogger('').addHandler(console)
+logger = logging.getLogger("cloud_sched")
 
 
 def filter_tasks(self, task_limit=500, time_limit=300, status_code=None, shuffle=None):
@@ -25,17 +46,23 @@ def filter_tasks(self, task_limit=500, time_limit=300, status_code=None, shuffle
         if total_time <= time_limit:
             count += 1
             filtered_tasks.append(task)
+
     return filtered_tasks
 
 
-def pre_process_tasks_alg(tasks, max_n_procs=1):
+def pre_process_tasks(tasks, max_n_procs=1):
     processed_tasks = []
+    count = 0
     for task in tasks:
         if task['number_of_allocated_processors'] > max_n_procs:
-            task['run_time'] = math.ceil(task['number_of_allocated_processors']
-                    // max_n_procs) * task['run_time']
+            count += 1
+            task['run_time'] = \
+                math.ceil(task['number_of_allocated_processors'] /
+                          max_n_procs) * task['run_time']
             task['number_of_allocated_processors'] = max_n_procs
         processed_tasks.append(task)
+    logger.debug("{} reshaped tasks with n_procs={}".format(count, max_n_procs))
+
     return processed_tasks
 
 
@@ -56,15 +83,6 @@ def tasks_statistics(tasks, field):
             "stdev": stdev_data}
 
 
-def print_tasks(tasks, limit=None):
-    count = 0
-    for task in tasks:
-        if limit and count >= limit:
-            break
-        pprint(task)
-        count += 1
-
-
 def tasks_histogram(tasks, field, bins=10):
     data = []
     for task in tasks:
@@ -77,28 +95,39 @@ def tasks_histogram(tasks, field, bins=10):
     pyplot.show()
 
 
+def calculate_makespan(tasks, n_procs):
+    procs = [0] * n_procs
+    for task in tasks:
+        # Get index of the minimum processor run time
+        index = procs.index(min(procs))
+        # Simulate allocation in the processor with minimum run time
+        procs[index] += task['run_time']
+    # Return makespan, that is the maximum value of procs
+    return max(procs)
+
+
 def largest_task_first(tasks, max_n_procs):
+    minimum_makespan = float("inf")
+    resulting_tasks = tasks
     for procs in range(1, max_n_procs + 1):
-        pre_processed_tasks = pre_process_tasks_alg(tasks, procs)
-        processed_tasks = sorted(pre_processed_tasks, key=lambda t:
-                                 t['run_time'] *
-                                 t['number_of_allocated_processors'],
-                                 reverse=True)
-        #pprint(processed_tasks)
-        #for task in processed_tasks:
-            #print("Task {} total run time: {}"
-                  #.format(task['job_number'],
-                          #task['run_time'] *
-                          #task['number_of_allocated_processors']))
-        return tasks
+        no_processed_tasks = copy.deepcopy(tasks)
+        pre_processed_tasks = pre_process_tasks(no_processed_tasks, procs)
+        lft_sorted_tasks = sorted(pre_processed_tasks,
+                                  key=lambda t:
+                                  t['run_time'] *
+                                  t['number_of_allocated_processors'],
+                                  reverse=True)
+        current_makespan = calculate_makespan(lft_sorted_tasks, procs)
+        if current_makespan < minimum_makespan:
+            logger.debug("New minimum makespan found => n_procs={}, t={}"
+                         .format(procs, current_makespan))
+            minimum_makespan = current_makespan
+            resulting_tasks = lft_sorted_tasks
+
+    return resulting_tasks
 
 
 if __name__ == "__main__":
     tasks = parse_swf_file("UniLu-Gaia-2014-2.swf")
     filtered_tasks = filter_tasks(tasks, 500, 300, 1)
-    #processed_tasks = pre_process_tasks_alg(filtered_tasks, 2)
-    #print_tasks(processed_tasks, 10)
-    #stats = tasks_statistics(processed_tasks, 'run_time')
-    #pprint(stats)
-    #tasks_histogram(processed_tasks, 'run_time', 50)
-    largest_task_first(filtered_tasks, 1)
+    largest_task_first(filtered_tasks, 32)
