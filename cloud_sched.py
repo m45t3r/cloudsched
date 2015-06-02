@@ -52,19 +52,19 @@ def filter_tasks(self, task_limit=500, time_limit=300, status_code=None, shuffle
 
     return filtered_tasks
 
+def reshape_task(task, max_n_procs=1):
+    if task['number_of_allocated_processors'] > max_n_procs:
+        task['run_time'] = \
+            math.ceil(task['number_of_allocated_processors'] /
+                      max_n_procs) * task['run_time']
+        task['number_of_allocated_processors'] = max_n_procs
+    return task
 
-def pre_process_tasks(tasks, max_n_procs=1):
+def reshape_all_tasks(tasks, max_n_procs=1):
     processed_tasks = []
-    count = 0
     for task in tasks:
-        if task['number_of_allocated_processors'] > max_n_procs:
-            count += 1
-            task['run_time'] = \
-                math.ceil(task['number_of_allocated_processors'] /
-                          max_n_procs) * task['run_time']
-            task['number_of_allocated_processors'] = max_n_procs
+        task = reshape_task(task, max_n_procs)
         processed_tasks.append(task)
-    logger.debug("{} reshaped tasks with n_procs={}".format(count, max_n_procs))
 
     return processed_tasks
 
@@ -118,12 +118,31 @@ def calculate_makespan(tasks, n_procs):
     return max(procs)
 
 
+def first_in_first_out(tasks, max_n_procs):
+    minimum_makespan = float("inf")
+    resulting_tasks = tasks
+    for procs in range(1, max_n_procs + 1):
+        no_processed_tasks = copy.deepcopy(tasks)
+        pre_processed_tasks = reshape_all_tasks(no_processed_tasks, procs)
+        current_makespan = calculate_makespan(pre_processed_tasks, procs)
+        if current_makespan < minimum_makespan:
+            logger.debug("New minimum makespan found => n_procs={}, t={}"
+                         .format(procs, current_makespan))
+            minimum_makespan = current_makespan
+            resulting_tasks = pre_processed_tasks
+        else:
+            logger.debug("New makespan is greater than minimum = > n_procs={}, t={}"
+                         .format(procs, current_makespan))
+
+    return resulting_tasks
+
+
 def largest_task_first(tasks, max_n_procs):
     minimum_makespan = float("inf")
     resulting_tasks = tasks
     for procs in range(1, max_n_procs + 1):
         no_processed_tasks = copy.deepcopy(tasks)
-        pre_processed_tasks = pre_process_tasks(no_processed_tasks, procs)
+        pre_processed_tasks = reshape_all_tasks(no_processed_tasks, procs)
         lft_sorted_tasks = sorted(pre_processed_tasks,
                                   key=lambda t:
                                   t['run_time'] *
@@ -145,4 +164,5 @@ def largest_task_first(tasks, max_n_procs):
 if __name__ == "__main__":
     tasks = parse_swf_file("UniLu-Gaia-2014-2.swf")
     filtered_tasks = filter_tasks(tasks, 500, 300, 1)
+    first_in_first_out(filtered_tasks, 32)
     largest_task_first(filtered_tasks, 32)
