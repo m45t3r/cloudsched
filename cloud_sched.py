@@ -20,7 +20,8 @@ logging.basicConfig(level=logging.DEBUG,
                     filemode='w')
 # define a Handler which writes DEBUG messages or higher to the sys.stderr
 console = logging.StreamHandler()
-console.setLevel(logging.DEBUG)
+#console.setLevel(logging.DEBUG)
+console.setLevel(logging.ERROR)
 # set a format which is simpler for console use
 formatter = logging.Formatter('%(funcName)-20s| %(levelname)-8s| %(message)s')
 # tell the handler to use this format
@@ -124,6 +125,28 @@ def calculate_makespan(tasks, n_procs):
     return max(procs)
 
 
+def round_robin_tasks(tasks, vms):
+    tasks_per_vm = [[] for x in range(vms)]
+    i = 0
+    for task in tasks:
+        try:
+            tasks_per_vm[i]
+        except IndexError:
+            i = 0
+        tasks_per_vm[i].append(task)
+        i += 1
+    return tasks_per_vm
+
+
+def calculate_makespan_multiple_vms(tasks, procs_per_vm, vms):
+    time_per_vm = [0] * vms
+    # Distribute tasks to each VM using Round-Robin
+    tasks_per_vm = round_robin_tasks(tasks, vms)
+    for i, vm_tasks in enumerate(tasks_per_vm):
+        time_per_vm[i] = calculate_makespan(vm_tasks, procs_per_vm)
+    return max(time_per_vm)
+
+
 def first_in_first_out(tasks, max_n_procs):
     minimum_makespan = float("inf")
     resulting_tasks = tasks
@@ -169,6 +192,9 @@ def largest_task_first(tasks, max_n_procs):
 
 if __name__ == "__main__":
     tasks = parse_swf_file("UniLu-Gaia-2014-2.swf")
-    filtered_tasks = filter_tasks(tasks, 500, 300, 1)
-    first_in_first_out(filtered_tasks, 32)
-    largest_task_first(filtered_tasks, 32)
+    filtered_tasks = filter_tasks(tasks, 500, 300, 1, None)
+    result_fifo = first_in_first_out(filtered_tasks, 16)
+    makespan_fifo = calculate_makespan_multiple_vms(result_fifo, 16, 2)
+    result_lft = largest_task_first(filtered_tasks, 16)
+    makespan_lft = calculate_makespan_multiple_vms(result_lft, 16, 2)
+    print("Resulting makespan: FIFO={}, LFT={}".format(makespan_fifo, makespan_lft))
