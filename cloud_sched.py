@@ -31,6 +31,10 @@ logging.getLogger('').addHandler(console)
 logger = logging.getLogger("cloud_sched")
 
 
+class CloudSchedException(Exception):
+    pass
+
+
 def filter_tasks(self, task_limit=500, time_limit=300, status_code=None, shuffle=None):
     count = 0
     filtered_tasks = []
@@ -98,11 +102,20 @@ def tasks_histogram(tasks, field, bins=10):
 def calculate_makespan(tasks, n_procs):
     procs = [0] * n_procs
     for task in tasks:
-        # Get index of the minimum processor run time
-        index = procs.index(min(procs))
-        # Simulate allocation in the processor with minimum run time
-        procs[index] += task['run_time']
-    # Return makespan, that is the maximum value of procs
+        if task['number_of_allocated_processors'] > n_procs:
+            raise CloudSchedException("number of allocated processors is greater"
+                                      " than number of current processors")
+        # Since the processors is sorted in order of current run time,
+        # we can allocate the task in the processor equivalent to the (number
+        # of processors the task required) - 1. This would be the new task
+        # start time.
+        procs.sort()
+        task_procs = int(task['number_of_allocated_processors'])
+        start_task_time = procs[task_procs - 1]
+        for p in range(task_procs):
+            # TODO: needs to implement backfilling!
+            procs[p] = start_task_time + task['run_time']
+    # Makespan is the finish of the last allocated task
     return max(procs)
 
 
@@ -123,6 +136,9 @@ def largest_task_first(tasks, max_n_procs):
                          .format(procs, current_makespan))
             minimum_makespan = current_makespan
             resulting_tasks = lft_sorted_tasks
+        else:
+            logger.debug("New makespan is greater than minimum = > n_procs={}, t={}"
+                         .format(procs, current_makespan))
 
     return resulting_tasks
 
