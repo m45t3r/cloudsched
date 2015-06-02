@@ -53,18 +53,24 @@ def filter_tasks(self, task_limit=500, time_limit=300, status_code=None, shuffle
     return filtered_tasks
 
 def reshape_task(task, max_n_procs=1):
+    reshaped = False
     if task['number_of_allocated_processors'] > max_n_procs:
+        reshaped = True
         task['run_time'] = \
             math.ceil(task['number_of_allocated_processors'] /
                       max_n_procs) * task['run_time']
         task['number_of_allocated_processors'] = max_n_procs
-    return task
+    return task, reshaped
 
 def reshape_all_tasks(tasks, max_n_procs=1):
     processed_tasks = []
+    count = 0
     for task in tasks:
-        task = reshape_task(task, max_n_procs)
+        task, reshaped = reshape_task(task, max_n_procs)
+        if reshaped:
+            count += 1
         processed_tasks.append(task)
+    logging.debug("Number of reshaped tasks: {}".format(count))
 
     return processed_tasks
 
