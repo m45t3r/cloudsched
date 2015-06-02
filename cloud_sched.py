@@ -15,15 +15,14 @@ from swf_parser import parse_swf_file
 
 
 logging.basicConfig(level=logging.DEBUG,
-                    format='%(asctime)s %(levelname)-8s %(message)s',
-                    datefmt='%m-%d %H:%M',
+                    format='%(name)s | %(funcName)s | %(asctime)s | %(levelname)s | %(message)s',
                     filename='cloud_sched.log',
                     filemode='w')
 # define a Handler which writes DEBUG messages or higher to the sys.stderr
 console = logging.StreamHandler()
 console.setLevel(logging.DEBUG)
 # set a format which is simpler for console use
-formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
+formatter = logging.Formatter('%(funcName)-20s| %(levelname)-8s| %(message)s')
 # tell the handler to use this format
 console.setFormatter(formatter)
 # add the handler to the root logger
