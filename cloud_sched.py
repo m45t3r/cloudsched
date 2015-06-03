@@ -7,6 +7,7 @@ import copy
 import logging
 import math
 import random
+import time
 from pprint import pprint
 
 import numpy
@@ -246,17 +247,23 @@ def generate_schedule(tasks, task_schedule_alg, vm_schedule_alg, procs_per_vm, n
     task_schedule = task_schedule_alg(tasks, procs_per_vm)
     vm_schedule = vm_schedule_alg(task_schedule, procs_per_vm, number_of_vms)
     calculated_makespan = calculate_makespan_multiple_vms(vm_schedule, procs_per_vm, number_of_vms)
-    print("{}/{} calculated makespan={}"
-          .format(task_schedule_alg.__name__, vm_schedule_alg.__name__,calculated_makespan))
     result_filename = "tasks_{}-{}-{}-cpus_{}-vms_{}.csv".format(len(tasks),
             task_schedule_alg.__name__, vm_schedule_alg.__name__, procs_per_vm, number_of_vms)
     export_schedule(vm_schedule, result_filename)
+
+    return calculated_makespan
 
 
 if __name__ == "__main__":
     tasks = parse_swf_file("UniLu-Gaia-2014-2.swf")
     filtered_tasks = filter_tasks(tasks, 500, 300, 1, None)
-    generate_schedule(filtered_tasks, first_in_first_out, round_robin, 16, 2)
-    generate_schedule(filtered_tasks, largest_task_first, round_robin, 16, 2)
-    generate_schedule(filtered_tasks, first_in_first_out, minimal_current_makespan, 16, 2)
-    generate_schedule(filtered_tasks, largest_task_first, minimal_current_makespan, 16, 2)
+    
+    for task_schedule_alg in [first_in_first_out, largest_task_first]:
+        for vm_schedule_alg in [round_robin, minimal_current_makespan]:
+            start = time.clock()
+            calculated_makespan = generate_schedule(filtered_tasks, task_schedule_alg, vm_schedule_alg, 16, 2)
+            end = time.clock()
+            print("{}/{} calculated makespan={}".format(task_schedule_alg.__name__,
+                                                        vm_schedule_alg.__name__,
+                                                        calculated_makespan))
+            print("elapsed time={}".format(end - start))
