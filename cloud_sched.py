@@ -110,19 +110,22 @@ def round_robin(tasks, procs_per_vm, vms):
 
 def minimal_current_makespan(tasks, procs_per_vm, vms):
     tasks_per_vm = [[] for x in range(vms)]
+    calculated_makespans = [0] * vms
     for task in tasks:
         minimal_makespan = float('inf')
         selected_vm = None
-        for vm in tasks_per_vm:
-            if not vm:
-                selected_vm = vm
+        for current_vm in enumerate(tasks_per_vm):
+            if not current_vm:
+                selected_vm = current_vm
                 break
             else:
-                current_makespan = calculate_makespan(vm, procs_per_vm)
-                if current_makespan < minimal_makespan:
-                    minimal_makespan = current_makespan
-                    selected_vm = vm
-        selected_vm.append(task)
+                if calculated_makespans[current_vm[0]] < minimal_makespan:
+                    minimal_makespan = calculated_makespans[current_vm[0]]
+                    selected_vm = current_vm
+        vm_number, vm = selected_vm
+        vm.append(task)
+        calculated_makespans[vm_number] = \
+                calculate_makespan(vm, procs_per_vm)
 
     return tasks_per_vm
 
@@ -256,7 +259,7 @@ def generate_schedule(tasks, task_schedule_alg, vm_schedule_alg, procs_per_vm, n
 
 if __name__ == "__main__":
     tasks = parse_swf_file("UniLu-Gaia-2014-2.swf")
-    filtered_tasks = filter_tasks(tasks, 500, 300, 1, None)
+    filtered_tasks = filter_tasks(tasks, 5000, 300, 1, None)
     
     for task_schedule_alg in [first_in_first_out, largest_task_first]:
         for vm_schedule_alg in [round_robin, minimal_current_makespan]:
