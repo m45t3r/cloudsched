@@ -36,136 +36,13 @@ class CloudSchedException(Exception):
     pass
 
 
-def filter_tasks(self, task_limit=500, time_limit=300, status_code=None, shuffle=None):
-    count = 0
-    filtered_tasks = []
-    if shuffle:
-        random.seed(shuffle)
-        random.shuffle(tasks)
-    for task in tasks:
-        if count >= task_limit:
-            break
-        if status_code and status_code != task['status']:
-            continue
-        total_time = task['run_time'] * task['number_of_allocated_processors']
-        if total_time <= time_limit:
-            count += 1
-            filtered_tasks.append(task)
-
-    return filtered_tasks
-
-def reshape_task(task, max_n_procs=1):
-    reshaped = False
-    if task['number_of_allocated_processors'] > max_n_procs:
-        reshaped = True
-        task['run_time'] = \
-            math.ceil(task['number_of_allocated_processors'] /
-                      max_n_procs) * task['run_time']
-        task['number_of_allocated_processors'] = max_n_procs
-    return task, reshaped
-
-def reshape_all_tasks(tasks, max_n_procs=1):
-    processed_tasks = []
-    count = 0
-    for task in tasks:
-        task, reshaped = reshape_task(task, max_n_procs)
-        if reshaped:
-            count += 1
-        processed_tasks.append(task)
-    logging.debug("Number of reshaped tasks: {}".format(count))
-
-    return processed_tasks
-
-
-def tasks_statistics(tasks, field):
-    data = []
-    count_data = 0
-    for task in tasks:
-        count_data += 1
-        data.append(task[field])
-
-    sum_data = sum(data)
-    mean_data = numpy.mean(data)
-    stdev_data = numpy.std(data)
-
-    return {"count": count_data,
-            "sum": sum_data,
-            "mean": mean_data,
-            "stdev": stdev_data}
-
-
-def tasks_histogram(tasks, field, bins=10):
-    data = []
-    for task in tasks:
-        data.append(task[field])
-
-    pyplot.hist(data, bins)
-    pyplot.title("{} histogram".format(field))
-    pyplot.xlabel("Value")
-    pyplot.ylabel("Frequency")
-    pyplot.show()
-
-
-def calculate_makespan(tasks, n_procs):
-    procs = [0] * n_procs
-    for task in tasks:
-        if task['number_of_allocated_processors'] > n_procs:
-            raise CloudSchedException("number of allocated processors is greater"
-                                      " than number of current processors")
-        # Since the processors is sorted in order of current run time,
-        # we can allocate the task in the processor equivalent to the (number
-        # of processors the task required) - 1. This would be the new task
-        # start time.
-        procs.sort()
-        task_procs = int(task['number_of_allocated_processors'])
-        start_task_time = procs[task_procs - 1]
-        for p in range(task_procs):
-            # TODO: needs to implement backfilling!
-            procs[p] = start_task_time + task['run_time']
-    # Makespan is the finish of the last allocated task
-    return max(procs)
-
-
-def round_robin(tasks, procs_per_vm, vms):
-    tasks_per_vm = [[] for x in range(vms)]
-    i = 0
-    for task in tasks:
-        try:
-            tasks_per_vm[i]
-        except IndexError:
-            i = 0
-        tasks_per_vm[i].append(task)
-        i += 1
-
-    return tasks_per_vm
-
-
-def minimal_current_makespan(tasks, procs_per_vm, vms):
-    tasks_per_vm = [[] for x in range(vms)]
-    for task in tasks:
-        minimal_makespan = float('inf')
-        selected_vm = None
-        for vm in tasks_per_vm:
-            if not vm:
-                selected_vm = vm
-                break
-            else:
-                current_makespan = calculate_makespan(vm, procs_per_vm)
-                if current_makespan < minimal_makespan:
-                    minimal_makespan = current_makespan
-                    selected_vm = vm
-        selected_vm.append(task)
-
-    return tasks_per_vm
-
-
-def calculate_makespan_multiple_vms(tasks_per_vm, procs_per_vm, vms):
-    time_per_vm = [0] * vms
-    for i, vm_tasks in enumerate(tasks_per_vm):
-        time_per_vm[i] = calculate_makespan(vm_tasks, procs_per_vm)
-    return max(time_per_vm)
-
-
+# Tasks schedule algorithms
+# To implement a new algorithm, maintain this same prototype:
+#
+# def task_schedule_algorithm(tasks, max_n_procs)
+#
+# Where tasks is a list of tasks and max_n_procs is the maximum number of
+# processors
 def first_in_first_out(tasks, max_n_procs):
     minimum_makespan = float("inf")
     resulting_tasks = tasks
@@ -207,6 +84,147 @@ def largest_task_first(tasks, max_n_procs):
                          .format(procs, current_makespan))
 
     return resulting_tasks
+
+
+# VM tasks schedule algorithms
+# To implement a new algorithm, maintain this same prototype:
+#
+# def task_schedule_algorithm(tasks, procs_per_vm, vms)
+#
+# Where tasks is a list of tasks, procs_per_vm is the number of processors
+# per vm, and vms is the number of vms
+def round_robin(tasks, procs_per_vm, vms):
+    tasks_per_vm = [[] for x in range(vms)]
+    i = 0
+    for task in tasks:
+        try:
+            tasks_per_vm[i]
+        except IndexError:
+            i = 0
+        tasks_per_vm[i].append(task)
+        i += 1
+
+    return tasks_per_vm
+
+
+def minimal_current_makespan(tasks, procs_per_vm, vms):
+    tasks_per_vm = [[] for x in range(vms)]
+    for task in tasks:
+        minimal_makespan = float('inf')
+        selected_vm = None
+        for vm in tasks_per_vm:
+            if not vm:
+                selected_vm = vm
+                break
+            else:
+                current_makespan = calculate_makespan(vm, procs_per_vm)
+                if current_makespan < minimal_makespan:
+                    minimal_makespan = current_makespan
+                    selected_vm = vm
+        selected_vm.append(task)
+
+    return tasks_per_vm
+
+
+# Auxiliary algorithms
+# Used by the algorithms above
+def reshape_task(task, max_n_procs=1):
+    reshaped = False
+    if task['number_of_allocated_processors'] > max_n_procs:
+        reshaped = True
+        task['run_time'] = \
+            math.ceil(task['number_of_allocated_processors'] /
+                      max_n_procs) * task['run_time']
+        task['number_of_allocated_processors'] = max_n_procs
+    return task, reshaped
+
+def reshape_all_tasks(tasks, max_n_procs=1):
+    processed_tasks = []
+    count = 0
+    for task in tasks:
+        task, reshaped = reshape_task(task, max_n_procs)
+        if reshaped:
+            count += 1
+        processed_tasks.append(task)
+    logging.debug("Number of reshaped tasks: {}".format(count))
+
+    return processed_tasks
+
+
+def calculate_makespan(tasks, n_procs):
+    procs = [0] * n_procs
+    for task in tasks:
+        if task['number_of_allocated_processors'] > n_procs:
+            raise CloudSchedException("number of allocated processors is greater"
+                                      " than number of current processors")
+        # Since the processors is sorted in order of current run time,
+        # we can allocate the task in the processor equivalent to the (number
+        # of processors the task required) - 1. This would be the new task
+        # start time.
+        procs.sort()
+        task_procs = int(task['number_of_allocated_processors'])
+        start_task_time = procs[task_procs - 1]
+        for p in range(task_procs):
+            # TODO: needs to implement backfilling!
+            procs[p] = start_task_time + task['run_time']
+    # Makespan is the finish of the last allocated task
+    return max(procs)
+
+
+def calculate_makespan_multiple_vms(tasks_per_vm, procs_per_vm, vms):
+    time_per_vm = [0] * vms
+    for i, vm_tasks in enumerate(tasks_per_vm):
+        time_per_vm[i] = calculate_makespan(vm_tasks, procs_per_vm)
+    return max(time_per_vm)
+
+
+# Misc functions
+def filter_tasks(self, task_limit=500, time_limit=300, status_code=None, shuffle=None):
+    count = 0
+    filtered_tasks = []
+    if shuffle:
+        random.seed(shuffle)
+        random.shuffle(tasks)
+    for task in tasks:
+        if count >= task_limit:
+            break
+        if status_code and status_code != task['status']:
+            continue
+        total_time = task['run_time'] * task['number_of_allocated_processors']
+        if total_time <= time_limit:
+            count += 1
+            filtered_tasks.append(task)
+
+    return filtered_tasks
+
+
+def tasks_statistics(tasks, field):
+    data = []
+    count_data = 0
+    for task in tasks:
+        count_data += 1
+        data.append(task[field])
+
+    sum_data = sum(data)
+    mean_data = numpy.mean(data)
+    stdev_data = numpy.std(data)
+
+    return {"count": count_data,
+            "sum": sum_data,
+            "mean": mean_data,
+            "stdev": stdev_data}
+
+
+def tasks_histogram(tasks, field, bins=10):
+    data = []
+    for task in tasks:
+        data.append(task[field])
+
+    pyplot.hist(data, bins)
+    pyplot.title("{} histogram".format(field))
+    pyplot.xlabel("Value")
+    pyplot.ylabel("Frequency")
+    pyplot.show()
 
 
 def export_schedule(result_tasks, filename):
