@@ -2,6 +2,7 @@
 
 from __future__ import print_function, division
 
+import csv
 import copy
 import logging
 import math
@@ -125,7 +126,7 @@ def calculate_makespan(tasks, n_procs):
     return max(procs)
 
 
-def round_robin_tasks(tasks, vms):
+def round_robin(tasks, procs_per_vm, vms):
     tasks_per_vm = [[] for x in range(vms)]
     i = 0
     for task in tasks:
@@ -135,13 +136,31 @@ def round_robin_tasks(tasks, vms):
             i = 0
         tasks_per_vm[i].append(task)
         i += 1
+
     return tasks_per_vm
 
 
-def calculate_makespan_multiple_vms(tasks, procs_per_vm, vms):
+def minimal_current_makespan(tasks, procs_per_vm, vms):
+    tasks_per_vm = [[] for x in range(vms)]
+    for task in tasks:
+        minimal_makespan = float('inf')
+        selected_vm = None
+        for vm in tasks_per_vm:
+            if not vm:
+                selected_vm = vm
+                break
+            else:
+                current_makespan = calculate_makespan(vm, procs_per_vm)
+                if current_makespan < minimal_makespan:
+                    minimal_makespan = current_makespan
+                    selected_vm = vm
+        selected_vm.append(task)
+
+    return tasks_per_vm
+
+
+def calculate_makespan_multiple_vms(tasks_per_vm, procs_per_vm, vms):
     time_per_vm = [0] * vms
-    # Distribute tasks to each VM using Round-Robin
-    tasks_per_vm = round_robin_tasks(tasks, vms)
     for i, vm_tasks in enumerate(tasks_per_vm):
         time_per_vm[i] = calculate_makespan(vm_tasks, procs_per_vm)
     return max(time_per_vm)
@@ -190,11 +209,36 @@ def largest_task_first(tasks, max_n_procs):
     return resulting_tasks
 
 
+def export_schedule(result_tasks, filename):
+    with open(filename, 'w') as result_file:
+        fieldnames = ['vm_number', 'job_order', 'orig_job_number', 'run_time', 'procs']
+        csv_writer = csv.DictWriter(result_file, fieldnames)
+        csv_writer.writeheader()
+        for vm_number, vm_tasks in enumerate(result_tasks):
+            for job_order, vm_task in enumerate(vm_tasks):
+                csv_writer.writerow({'vm_number': vm_number,
+                                     'job_order': job_order,
+                                     'orig_job_number': vm_task['job_number'],
+                                     'run_time': vm_task['run_time'],
+                                     'procs': vm_task['number_of_allocated_processors']
+                                     })
+
+
+def generate_schedule(tasks, task_schedule_alg, vm_schedule_alg, procs_per_vm, number_of_vms):
+    task_schedule = task_schedule_alg(tasks, procs_per_vm)
+    vm_schedule = vm_schedule_alg(task_schedule, procs_per_vm, number_of_vms)
+    calculated_makespan = calculate_makespan_multiple_vms(vm_schedule, procs_per_vm, number_of_vms)
+    print("{}/{} calculated makespan={}"
+          .format(task_schedule_alg.__name__, vm_schedule_alg.__name__,calculated_makespan))
+    result_filename = "tasks_{}-{}-{}-cpus_{}-vms_{}.csv".format(len(tasks),
+            task_schedule_alg.__name__, vm_schedule_alg.__name__, procs_per_vm, number_of_vms)
+    export_schedule(vm_schedule, result_filename)
+
+
 if __name__ == "__main__":
     tasks = parse_swf_file("UniLu-Gaia-2014-2.swf")
     filtered_tasks = filter_tasks(tasks, 500, 300, 1, None)
-    result_fifo = first_in_first_out(filtered_tasks, 16)
-    makespan_fifo = calculate_makespan_multiple_vms(result_fifo, 16, 2)
-    result_lft = largest_task_first(filtered_tasks, 16)
-    makespan_lft = calculate_makespan_multiple_vms(result_lft, 16, 2)
-    print("Resulting makespan: FIFO={}, LFT={}".format(makespan_fifo, makespan_lft))
+    generate_schedule(filtered_tasks, first_in_first_out, round_robin, 16, 2)
+    generate_schedule(filtered_tasks, largest_task_first, round_robin, 16, 2)
+    generate_schedule(filtered_tasks, first_in_first_out, minimal_current_makespan, 16, 2)
+    generate_schedule(filtered_tasks, largest_task_first, minimal_current_makespan, 16, 2)
