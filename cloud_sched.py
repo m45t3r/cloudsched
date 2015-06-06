@@ -45,20 +45,8 @@ class CloudSchedException(Exception):
 # Where tasks is a list of tasks and max_n_procs is the maximum number of
 # processors
 def first_in_first_out(tasks, max_n_procs):
-    minimum_makespan = float("inf")
-    resulting_tasks = tasks
-    for procs in range(1, max_n_procs + 1):
-        no_processed_tasks = copy.deepcopy(tasks)
-        pre_processed_tasks = reshape_all_tasks(no_processed_tasks, procs)
-        current_makespan = calculate_makespan(pre_processed_tasks, procs)
-        if current_makespan < minimum_makespan:
-            logger.debug("New minimum makespan found => n_procs={}, t={}"
-                         .format(procs, current_makespan))
-            minimum_makespan = current_makespan
-            resulting_tasks = pre_processed_tasks
-        else:
-            logger.debug("New makespan is greater than minimum = > n_procs={}, t={}"
-                         .format(procs, current_makespan))
+    no_processed_tasks = copy.deepcopy(tasks)
+    resulting_tasks = reshape_all_tasks(no_processed_tasks, max_n_procs)
 
     return resulting_tasks
 
@@ -85,6 +73,10 @@ def largest_task_first(tasks, max_n_procs):
                          .format(procs, current_makespan))
 
     return resulting_tasks
+
+
+def reduce_idle_time_conservative(tasks, max_n_procs):
+    pass
 
 
 # VM tasks schedule algorithms
@@ -259,7 +251,7 @@ def generate_schedule(tasks, task_schedule_alg, vm_schedule_alg, procs_per_vm, n
 
 if __name__ == "__main__":
     tasks = parse_swf_file("UniLu-Gaia-2014-2.swf")
-    filtered_tasks = filter_tasks(tasks, 5000, 300, 1, None)
+    filtered_tasks = filter_tasks(tasks, 250, 300, 1, None)
     
     for task_schedule_alg in [first_in_first_out, largest_task_first]:
         for vm_schedule_alg in [round_robin, minimal_current_makespan]:
