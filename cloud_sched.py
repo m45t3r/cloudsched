@@ -44,9 +44,9 @@ class CloudSchedException(Exception):
 #
 # Where tasks is a list of tasks and max_n_procs is the maximum number of
 # processors
+# TODO: implement backfilling where it makes sense
 def first_in_first_out(tasks, max_n_procs):
-    no_processed_tasks = copy.deepcopy(tasks)
-    resulting_tasks = reshape_all_tasks(no_processed_tasks, max_n_procs)
+    resulting_tasks = reshape_all_tasks(tasks, max_n_procs)
 
     return resulting_tasks
 
@@ -55,12 +55,10 @@ def largest_task_first(tasks, max_n_procs):
     minimum_makespan = float("inf")
     resulting_tasks = tasks
     for procs in range(1, max_n_procs + 1):
-        no_processed_tasks = copy.deepcopy(tasks)
-        pre_processed_tasks = reshape_all_tasks(no_processed_tasks, procs)
+        pre_processed_tasks = reshape_all_tasks(tasks, procs)
+        # We could use get_largest_task here but this should be faster
         lft_sorted_tasks = sorted(pre_processed_tasks,
-                                  key=lambda t:
-                                  t['run_time'] *
-                                  t['number_of_allocated_processors'],
+                                  key=get_task_run_time,
                                   reverse=True)
         current_makespan = calculate_makespan(lft_sorted_tasks, procs)
         if current_makespan < minimum_makespan:
@@ -76,7 +74,37 @@ def largest_task_first(tasks, max_n_procs):
 
 
 def reduce_idle_time_conservative(tasks, max_n_procs):
-    pass
+    resulting_tasks = []
+    pre_processed_tasks = reshape_all_tasks(tasks, max_n_procs)
+    # The initial idle time is 0, since there is no tasks allocated yet
+    idle_time = 0
+    n_procs_idle = 0
+
+    while True:
+        if not pre_processed_tasks:
+            break
+        elif idle_time > 0 or n_procs_idle > 0:
+            sorted_tasks = sorted(pre_processed_tasks, key=get_task_run_time, reverse=True)
+            for task in sorted_tasks:
+                if idle_time == 0 or n_procs_idle == 0:
+                    break
+                task_run_time = get_task_run_time(task)
+                if task_run_time <= idle_time:
+                    reshaped_task = reshape_task(task, n_procs_idle)[0]
+                    n_procs_idle -= reshaped_task['number_of_allocated_processors']
+                    idle_time -= task_run_time
+                    resulting_tasks.append(reshaped_task)
+                    pre_processed_tasks.remove(task)
+            idle_time = 0
+            n_procs_idle = 0
+        else:
+            largest_task = get_largest_task(pre_processed_tasks)
+            resulting_tasks.append(largest_task)
+            pre_processed_tasks.remove(largest_task)
+            n_procs_idle = max_n_procs - largest_task['number_of_allocated_processors']
+            idle_time = n_procs_idle * largest_task['run_time']
+
+    return resulting_tasks
 
 
 # VM tasks schedule algorithms
@@ -134,6 +162,7 @@ def reshape_task(task, max_n_procs=1):
         task['number_of_allocated_processors'] = max_n_procs
     return task, reshaped
 
+
 def reshape_all_tasks(tasks, max_n_procs=1):
     processed_tasks = []
     count = 0
@@ -160,18 +189,31 @@ def calculate_makespan(tasks, n_procs):
         procs.sort()
         task_procs = int(task['number_of_allocated_processors'])
         start_task_time = procs[task_procs - 1]
+        gap = 0.0
         for p in range(task_procs):
-            # TODO: needs to implement backfilling!
+            # TODO: implement backfilling to reduce this gaps
+            gap += start_task_time - procs[p]
             procs[p] = start_task_time + task['run_time']
+        if gap > 0.0:
+            logger.debug("Gap of {} found before allocation of task {}"
+                         .format(gap, task['job_number']))
     # Makespan is the finish of the last allocated task
     return max(procs)
 
 
-def calculate_makespan_multiple_vms(tasks_per_vm, procs_per_vm, vms):
+def calculate_makespan_vms(tasks_per_vm, procs_per_vm, vms):
     time_per_vm = [0] * vms
     for i, vm_tasks in enumerate(tasks_per_vm):
         time_per_vm[i] = calculate_makespan(vm_tasks, procs_per_vm)
     return max(time_per_vm)
+
+
+def get_largest_task(tasks):
+    return max(tasks, key=get_task_run_time)
+
+
+def get_task_run_time(task):
+    return task['run_time'] * task['number_of_allocated_processors']
 
 
 # Misc functions
@@ -239,24 +281,25 @@ def export_schedule(result_tasks, filename):
 
 
 def generate_schedule(tasks, task_schedule_alg, vm_schedule_alg, procs_per_vm, number_of_vms):
-    task_schedule = task_schedule_alg(tasks, procs_per_vm)
-    vm_schedule = vm_schedule_alg(task_schedule, procs_per_vm, number_of_vms)
-    calculated_makespan = calculate_makespan_multiple_vms(vm_schedule, procs_per_vm, number_of_vms)
+    tasks_to_schedule = copy.deepcopy(tasks)
+    tasks_scheduled = task_schedule_alg(tasks_to_schedule, procs_per_vm)
+    tasks_scheduled_to_vms = vm_schedule_alg(tasks_scheduled, procs_per_vm, number_of_vms)
+    calculated_makespan = calculate_makespan_vms(tasks_scheduled_to_vms, procs_per_vm, number_of_vms)
     result_filename = "tasks_{}-{}-{}-cpus_{}-vms_{}.csv".format(len(tasks),
             task_schedule_alg.__name__, vm_schedule_alg.__name__, procs_per_vm, number_of_vms)
-    export_schedule(vm_schedule, result_filename)
+    export_schedule(tasks_scheduled_to_vms, result_filename)
 
     return calculated_makespan
 
 
 if __name__ == "__main__":
     tasks = parse_swf_file("UniLu-Gaia-2014-2.swf")
-    filtered_tasks = filter_tasks(tasks, 250, 300, 1, None)
-    
-    for task_schedule_alg in [first_in_first_out, largest_task_first]:
+    filtered_tasks = filter_tasks(tasks, 5000, 300, 1, None)
+
+    for task_schedule_alg in [first_in_first_out, largest_task_first, reduce_idle_time_conservative]:
         for vm_schedule_alg in [round_robin, minimal_current_makespan]:
             start = time.clock()
-            calculated_makespan = generate_schedule(filtered_tasks, task_schedule_alg, vm_schedule_alg, 16, 2)
+            calculated_makespan = generate_schedule(filtered_tasks, task_schedule_alg, vm_schedule_alg, 32, 1)
             end = time.clock()
             print("{}/{} calculated makespan={}".format(task_schedule_alg.__name__,
                                                         vm_schedule_alg.__name__,
