@@ -16,7 +16,7 @@
 
 void usage()
 {
-   fprintf(stderr, "usage: mp_task_sim ITERATIONS THREADS\n");
+   fprintf(stderr, "usage: mp_task_sim ITERATIONS\n");
    exit(EXIT_FAILURE);
 }
 
@@ -52,30 +52,28 @@ void *consume_cpu(void *iterations)
 int main(int argc, char *argv[])
 {
    long iterations = 0;
-   int num_threads = 0;
 
-   if (argc < 3) {
+   if (argc < 2) {
       usage();
    } else {
       iterations = atoi(argv[1]);
-      num_threads = atoi(argv[2]);
-      if (iterations <= 0 || num_threads <= 0) {
+      if (iterations <= 0) {
          usage();
       }
    }
    printf("Using %d threads during %ld iterations\n",
-         num_threads,
+         THREADS,
          iterations * ITERATIONS_PER_LOOP);
 
-   pthread_t threads[num_threads];
+   pthread_t threads[THREADS];
    /* Run consume_cpu() function in the number of threads and time
     * defined by the user. */
-   for (int i = 0; i < num_threads; i++) {
+   for (int i = 0; i < THREADS; i++) {
       pthread_create(&threads[i], NULL, consume_cpu, (void *) &iterations);
    }
    /* Needs to join threads here or the main program will exit before
     * the threads finish their job. */
-   for (int i = 0; i < num_threads; i++) {
+   for (int i = 0; i < THREADS; i++) {
       pthread_join(threads[i], NULL);
    }
 

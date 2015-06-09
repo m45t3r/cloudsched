@@ -13,22 +13,23 @@
  * cores. */
 
 long PARTIAL_SUM;
+pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 
 void *calculate_loop_time()
 {
    struct timespec start, finish;
    double elapsed;
+   long sum = 0;
 
    clock_gettime(CLOCK_MONOTONIC_RAW, &start);
 
    /* This main loop will run until we used all the time asked
     * by the user. */
-   PARTIAL_SUM = 0;
    for (;;) {
       /* Busy wait the CPU until a pre-determined number of
        * iterations. */
       for (long i = 0; i < ITERATIONS_PER_LOOP; ++i) {
-         ++PARTIAL_SUM;
+         ++sum;
       }
 
       /* This method only works on Linux from version 2.6.28 onwards,
@@ -40,7 +41,9 @@ void *calculate_loop_time()
       elapsed += (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
 
       if (elapsed >= SECONDS) {
-         printf("Number of iterations=%ld\n", PARTIAL_SUM);
+         pthread_mutex_lock(&lock);
+         PARTIAL_SUM += sum;
+         pthread_mutex_unlock(&lock);
          pthread_exit(NULL);
       }
    }
@@ -48,18 +51,24 @@ void *calculate_loop_time()
 
 int main(void)
 {
-   printf("Running for %d repetitions of %lf second(s)\n", REPETITIONS, SECONDS);
+   printf("Running for %d threads with %d repetitions for %lf second(s)\n",
+         THREADS, REPETITIONS, SECONDS);
 
    long final_sum = 0;
-   pthread_t thread;
+   pthread_t threads[THREADS];
    for (int i = 1; i <= REPETITIONS; ++i) {
+      PARTIAL_SUM = 0;
       printf("(%d/%d) ", i, REPETITIONS);
-      void *result = 0;
-      pthread_create(&thread, NULL, calculate_loop_time, NULL);
-      pthread_join(thread, &result);
+      for (int t = 0; t < THREADS; ++t) {
+         pthread_create(&threads[t], NULL, calculate_loop_time, NULL);
+      }
+      for (int t = 0; t < THREADS; ++t) {
+         pthread_join(threads[t], NULL);
+      }
+      printf("Number of iterations=%ld\n", PARTIAL_SUM / THREADS);
       final_sum += PARTIAL_SUM;
    }
-   long result = final_sum / REPETITIONS;
+   long result = final_sum / REPETITIONS / THREADS;
    printf("Mean iterations=%ld, Input=%ld\n", result, result / ITERATIONS_PER_LOOP);
    exit(EXIT_SUCCESS);
 }
