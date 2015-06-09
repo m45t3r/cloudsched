@@ -2,22 +2,16 @@
 # http://mrbook.org/blog/tutorials/make/
 
 CC=gcc
-CFLAGS=-c -O0
+CFLAGS=-O0 -Wall -std=gnu11
 LDFLAGS=-lm -lpthread
-SOURCES=mp_task_sim.c
-OBJECTS=$(SOURCES:.c=.o)
-EXECUTABLE=$(SOURCES:.c=)
 
-all: $(SOURCES) $(EXECUTABLE)
+all: calculate_loop_time mp_task_sim
 
-$(EXECUTABLE): $(OBJECTS) 
-	$(CC) $(LDFLAGS) $(OBJECTS) -o $@
+calculate_loop_time: calculate_loop_time.c common.h
+	$(CC) $(CFLAGS) $(LDFLAGS) -o calculate_loop_time calculate_loop_time.c
 
-.c.o:
-	$(CC) $(CFLAGS) $< -o $@
+mp_task_sim: mp_task_sim.c common.h
+	$(CC) $(CFLAGS) $(LDFLAGS) -o mp_task_sim mp_task_sim.c
 
 clean:
-	rm -rf $(OBJECTS) $(EXECUTABLE)
-
-tests: $(EXECUTABLE)
-	./$(EXECUTABLE) 5 8
+	rm -rf calculate_loop_time mp_task_sim

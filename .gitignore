@@ -2,7 +2,7 @@
 *
 
 # C's source files
-!*.c
+!tests/*.c
 
 # Bash's scripts
 !*.sh
