@@ -69,6 +69,6 @@ int main(void)
       final_sum += PARTIAL_SUM;
    }
    long result = final_sum / REPETITIONS / THREADS;
-   printf("Mean iterations=%ld, Input=%ld\n", result, result / ITERATIONS_PER_LOOP);
+   printf("Mean iterations=%ld\nInput=%ld\n", result, result / ITERATIONS_PER_LOOP);
    exit(EXIT_SUCCESS);
 }

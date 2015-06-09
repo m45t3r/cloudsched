@@ -279,17 +279,14 @@ def tasks_histogram(tasks, field, bins=10):
 
 
 def export_schedule(result_tasks, filename):
-    with open(filename, 'w') as result_file:
-        fieldnames = ['vm_number', 'job_order', 'orig_job_number', 'run_time', 'procs']
-        csv_writer = csv.DictWriter(result_file, fieldnames)
-        csv_writer.writeheader()
-        for vm_number, vm_tasks in enumerate(result_tasks):
-            for job_order, vm_task in enumerate(vm_tasks):
-                csv_writer.writerow({'vm_number': vm_number,
-                                     'job_order': job_order,
-                                     'orig_job_number': vm_task['job_number'],
-                                     'run_time': vm_task['run_time'],
-                                     'procs': vm_task['number_of_allocated_processors']
+    fieldnames = ['run_time', 'procs']
+    for vm_number, vm_tasks in enumerate(result_tasks):
+        with open(filename + "_vm_{}.trace".format(vm_number), 'wb') as result_file:
+            csv_writer = csv.DictWriter(result_file, fieldnames, delimiter='\t', lineterminator='\n')
+            #csv_writer.writeheader()
+            for vm_task in vm_tasks:
+                csv_writer.writerow({'run_time': int(vm_task['run_time']),
+                                     'procs': int(vm_task['number_of_allocated_processors'])
                                      })
 
 
@@ -298,8 +295,8 @@ def generate_schedule(tasks, task_schedule_alg, vm_schedule_alg, procs_per_vm, n
     tasks_scheduled = task_schedule_alg(tasks_to_schedule, procs_per_vm)
     tasks_scheduled_to_vms = vm_schedule_alg(tasks_scheduled, procs_per_vm, number_of_vms)
     calculated_makespan = calculate_makespan_vms(tasks_scheduled_to_vms, procs_per_vm, number_of_vms)
-    result_filename = "tasks_{}-{}-{}-cpus_{}-vms_{}.csv".format(len(tasks),
-            task_schedule_alg.__name__, vm_schedule_alg.__name__, procs_per_vm, number_of_vms)
+    result_filename = "tasks_{}-{}-{}-cpus_{}".format(len(tasks),
+            task_schedule_alg.__name__, vm_schedule_alg.__name__, procs_per_vm)
     export_schedule(tasks_scheduled_to_vms, result_filename)
 
     return calculated_makespan
