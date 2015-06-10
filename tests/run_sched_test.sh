@@ -71,14 +71,14 @@ function run_tasks() {
 function run_test() {
     local trace_file=$1
     local test_number=$2
-    local result_file="$(basename "$trace_file" .trace)"
+    local result_file="$(basename "$trace_file" .trace)-sched_${test_number}.csv"
 
     echo $NUMBER_OF_CORES > $TMPDIR/count
 
     echo "Starting tasks from $trace_file"
     echo "=========================================="
-    echo "job_number,run_time,n_procs" |& tee $result_file
-    /usr/bin/time -f %e -ao ${result_file}-result.txt run_tasks $1 |& tee -a "${result_file}-sched_${test_number}.csv"
+    echo "job_number,run_time,n_procs" |& tee "$result_file" 
+    time run_tasks $1 |& tee -a "$result_file"
 }
 
 if [[ "$BASH_SOURCE" == "$0" ]]; then
