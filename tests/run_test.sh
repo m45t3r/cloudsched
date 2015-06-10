@@ -5,6 +5,7 @@ set -eu
 TMPDIR=`mktemp -d`
 NUMBER_OF_CORES=32
 ONE_SECOND=500
+REPETITIONS=10
 
 function clean_up() {
     rm -rf $TMPDIR/count $TMPDIR/lock
@@ -88,8 +89,9 @@ if [[ "$BASH_SOURCE" == "$0" ]]; then
     echo "ONE_SECOND=$ONE_SECOND"
 
     for trace_file in *.trace; do
-	for i in `seq 30`; do
+	for i in `seq $REPETITIONS`; do
             run_test $trace_file $i
 	done
+	mv $trace_file ${trace_file}.ok
     done
 fi
