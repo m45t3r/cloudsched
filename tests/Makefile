@@ -3,7 +3,7 @@
 
 CC=gcc
 CFLAGS=-O0 -Wall -std=gnu11
-LDFLAGS=-lm -lpthread
+LDFLAGS=-lm -lpthread -pthread
 
 all: calculate_loop_time mp_task_sim
 
