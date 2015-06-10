@@ -327,8 +327,7 @@ if __name__ == "__main__":
     tasks = parse_swf_file("UniLu-Gaia-2014-2.swf")
     filtered_tasks = filter_tasks(tasks, 250, 300, 1, None)
 
-    for task_schedule_alg in [first_in_first_out, largest_task_first,
-            reduce_idle_time_conservative, reduce_idle_time_agressive]:
+    for task_schedule_alg in [first_in_first_out, largest_task_first, reduce_idle_time_conservative]:
         for vm_schedule_alg in [round_robin, minimal_current_makespan]:
             start = time.clock()
             calculated_makespan = generate_schedule(filtered_tasks, task_schedule_alg, vm_schedule_alg, 32, 1)
