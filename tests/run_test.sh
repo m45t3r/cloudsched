@@ -43,9 +43,8 @@ function decreasecount() {
 }
 
 function task() {
-    echo "Running process for $1 seconds with $2 CPUs"
-    ./mp_task_sim $(( $1 * $ONE_SECOND )) $2 2>/dev/null
-    increasecount $2
+    ./mp_task_sim $1 $(( $2 * $ONE_SECOND )) $3 2>/dev/null
+    increasecount $3
 }
 
 function calculate_one_second() {
@@ -53,25 +52,27 @@ function calculate_one_second() {
 }
 
 function run_tasks() {
-    while read -r run_time n_procs; do
+    while read -r job_number run_time n_procs; do
         if [ `readcount` -gt $n_procs ]; then
             decreasecount $n_procs
-            task $run_time $n_procs &
+            task $job_number $run_time $n_procs &
         else
             wait -n
         fi
     done < "$1"
+    wait
 }
 
 if [[ "$BASH_SOURCE" == "$0" ]]; then
     trap "clean_up; kill_children" SIGTERM SIGINT EXIT
 
     echo "Calculating one second of processing time"
-    #ONE_SECOND=`calculate_one_second`
-    echo "One second is equals to $ONE_SECOND of iterations"
+    ONE_SECOND=`calculate_one_second`
+    echo "ONE_SECOND=$ONE_SECOND"
 
     echo $NUMBER_OF_CORES > $TMPDIR/count
 
     echo "Starting tasks"
-    run_tasks $1
+    echo "=========================================="
+    time run_tasks $1
 fi

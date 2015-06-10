@@ -299,13 +299,14 @@ def tasks_histogram(tasks, field, bins=10):
 
 
 def export_schedule(result_tasks, filename):
-    fieldnames = ['run_time', 'procs']
+    fieldnames = ['job_number', 'run_time', 'procs']
     for vm_number, vm_tasks in enumerate(result_tasks):
         with open(filename + "_vm_{}.trace".format(vm_number), 'wb') as result_file:
             csv_writer = csv.DictWriter(result_file, fieldnames, delimiter='\t', lineterminator='\n')
             #csv_writer.writeheader()
             for vm_task in vm_tasks:
-                csv_writer.writerow({'run_time': int(vm_task['run_time']),
+                csv_writer.writerow({'job_number': int(vm_task['job_number']),
+                                     'run_time': int(vm_task['run_time']),
                                      'procs': int(vm_task['number_of_allocated_processors'])
                                      })
 
