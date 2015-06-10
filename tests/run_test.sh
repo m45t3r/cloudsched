@@ -69,11 +69,12 @@ function run_tasks() {
 
 function run_test() {
     local trace_file=$1
-    local result_file="$(basename "$trace_file" .trace)-result.csv"
+    local test_number=$2
+    local result_file="$(basename "$trace_file" .trace)-result_${test_number}.csv"
 
     echo $NUMBER_OF_CORES > $TMPDIR/count
 
-    echo "Starting tasks"
+    echo "Starting tasks from $trace_file"
     echo "=========================================="
     echo "job_number,run_time,n_procs" |& tee $result_file
     time run_tasks $1 |& tee -a $result_file
@@ -87,6 +88,8 @@ if [[ "$BASH_SOURCE" == "$0" ]]; then
     echo "ONE_SECOND=$ONE_SECOND"
 
     for trace_file in *.trace; do
-        run_test $trace_file
+	for i in `seq 30`; do
+            run_test $trace_file $i
+	done
     done
 fi

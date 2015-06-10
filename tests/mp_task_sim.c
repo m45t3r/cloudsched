@@ -22,12 +22,13 @@ void usage()
 
 void *consume_cpu(void *iterations)
 {
-   long *it = (long *)iterations;
+   int *it = (int *)iterations;
+   long total_iterations = (*it) * ITERATIONS_PER_LOOP;
    long sum;
 
    /* Busy wait the CPU until a pre-determined number of
     * iterations. */
-   for (long i = 0; i < (*it) * ITERATIONS_PER_LOOP; ++i) {
+   for (long i = 0; i < total_iterations; ++i) {
       ++sum;
    }
    /* Just print a hexadecimal representation of the thread id,
