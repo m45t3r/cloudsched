@@ -80,8 +80,10 @@ int main(int argc, char *argv[])
    elapsed = (finish.tv_sec - start.tv_sec);
    elapsed += (finish.tv_nsec - start.tv_nsec) / 1000000000.0;
 
-   printf("Job #%d running with %d threads finished after %lf seconds\n",
-         job_number, num_threads, elapsed);
+   /* printf("Job #%d running with %d threads finished after %lf seconds\n",
+         job_number, num_threads, elapsed); */
+   /* Printing result using .csv style to facilited the parsing later. */
+   printf("%d,%d,%lf\n", job_number, num_threads, elapsed);
 
    pthread_exit(NULL);
    exit(EXIT_SUCCESS);
