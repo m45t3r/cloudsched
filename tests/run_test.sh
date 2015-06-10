@@ -5,13 +5,13 @@ set -eu
 TMPDIR=`mktemp -d`
 NUMBER_OF_CORES=32
 ONE_SECOND=500
-RESULT_FILE="$(basename "$1" .trace)-result.csv"
 
 function clean_up() {
     rm -rf $TMPDIR/count $TMPDIR/lock
 }
 
 function kill_children() {
+    local proc
     for proc in `jobs -p`; do
         kill $proc
     done
@@ -44,9 +44,7 @@ function decreasecount() {
 }
 
 function task() {
-    local job_number=$1
-    local run_time=$2
-    local n_procs=$3
+    local job_number=$1 run_time=$2 n_procs=$3
     local iterations=$(( $run_time * $ONE_SECOND ))
     ./mp_task_sim $job_number $iterations $n_procs
     increasecount $n_procs
@@ -69,6 +67,18 @@ function run_tasks() {
     wait
 }
 
+function run_test() {
+    local trace_file=$1
+    local result_file="$(basename "$trace_file" .trace)-result.csv"
+
+    echo $NUMBER_OF_CORES > $TMPDIR/count
+
+    echo "Starting tasks"
+    echo "=========================================="
+    echo "job_number,run_time,n_procs" |& tee $result_file
+    time run_tasks $1 |& tee -a $result_file
+}
+
 if [[ "$BASH_SOURCE" == "$0" ]]; then
     trap "clean_up; kill_children" SIGTERM SIGINT EXIT
 
@@ -76,10 +86,7 @@ if [[ "$BASH_SOURCE" == "$0" ]]; then
     ONE_SECOND=`calculate_one_second`
     echo "ONE_SECOND=$ONE_SECOND"
 
-    echo $NUMBER_OF_CORES > $TMPDIR/count
-
-    echo "Starting tasks"
-    echo "=========================================="
-    echo "job_number,run_time,n_procs" |& tee $RESULT_FILE
-    time run_tasks $1 |& tee -a $RESULT_FILE
+    for trace_file in *.trace; do
+        run_test $trace_file
+    done
 fi

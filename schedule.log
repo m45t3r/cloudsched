@@ -1,0 +1,12 @@
+first_in_first_out/round_robin calculated makespan=1021.0
+elapsed time=0.024572
+first_in_first_out/minimal_current_makespan calculated makespan=1021.0
+elapsed time=0.941351
+largest_task_first/round_robin calculated makespan=536.0
+elapsed time=0.062011
+largest_task_first/minimal_current_makespan calculated makespan=536.0
+elapsed time=0.23072
+reduce_idle_time_conservative/round_robin calculated makespan=280.0
+elapsed time=0.032697
+reduce_idle_time_conservative/minimal_current_makespan calculated makespan=280.0
+elapsed time=0.521441
