@@ -58,12 +58,15 @@ function calculate_one_second() {
 function run_tasks() {
     local job_number run_time n_procs
     while read -r job_number run_time n_procs; do
-        if [ `readcount` -gt $n_procs ]; then
-            decreasecount $n_procs
-            task $job_number $run_time $n_procs &
-        else
-            wait -n
-        fi
+        while true; do
+            if [ `readcount` -gt $n_procs ]; then
+                decreasecount $n_procs
+                task $job_number $run_time $n_procs &
+                break
+            else
+                wait -n
+            fi
+        done
     done < "$1"
     wait
 }
