@@ -97,9 +97,6 @@ def reduce_idle_time_conservative(tasks, max_n_procs):
                             reshaped_task = current_reshaped_task
                     n_procs_idle -= reshaped_task['number_of_allocated_processors']
                     idle_time -= task_run_time
-                    # This task should be skipped when calculating the makespan, because
-                    # it's allocated between tasks.
-                    reshaped_task['fill_up'] = True
                     resulting_tasks.append(reshaped_task)
                     tasks.remove(task)
             idle_time = 0
@@ -211,10 +208,6 @@ def calculate_makespan(tasks, n_procs):
         if task['number_of_allocated_processors'] > n_procs:
             raise CloudSchedException("number of allocated processors is greater"
                                       " than number of current processors")
-        # Tasks marked with fill_up keyword should be skipped, since they're
-        # allocated between tasks.
-        if 'fill_up' in task:
-            continue
         # Since the processors is sorted in order of current run time,
         # we can allocate the task in the processor equivalent to the (number
         # of processors the task required) - 1. This would be the new task
