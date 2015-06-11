@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -eu
+#set -eu
 
 TMPDIR=`mktemp -d`
 NUMBER_OF_CORES=32
