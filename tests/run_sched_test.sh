@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -eu
+#set -eu
 
 TMPDIR=`mktemp -d`
 NUMBER_OF_CORES=32
@@ -59,7 +59,7 @@ function run_tasks() {
     local job_number run_time n_procs
     while read -r job_number run_time n_procs; do
         while true; do
-            if [ `readcount` -gt $n_procs ]; then
+            if [ `readcount` -ge $n_procs ]; then
                 decreasecount $n_procs
                 task $job_number $run_time $n_procs &
                 break
