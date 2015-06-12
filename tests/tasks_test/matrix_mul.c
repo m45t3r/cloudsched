@@ -61,9 +61,6 @@ int main(int argc, char *argv[])
   MPI_Barrier(MPI_COMM_WORLD);
 
   if(my_rank == MASTER) {
-    printf("Square matrix size: %d\n", N);
-
-    printf("MPI_Wtime() precision: %lf\n", MPI_Wtick());
     t_start = MPI_Wtime();
   } 
 
@@ -81,7 +78,7 @@ int main(int argc, char *argv[])
 
   if(my_rank == MASTER) {
     t_end = MPI_Wtime();
-    printf("Total elapsed time: %lf\n", t_end - t_start);
+    printf("%lf\n", t_end - t_start);
   }
 
   const long col_sum = N * (N-1) / 2;
