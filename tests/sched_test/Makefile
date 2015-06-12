@@ -1,12 +1,8 @@
-# Modified version from the last example of below page
-# http://mrbook.org/blog/tutorials/make/
-
 CC=gcc
-MPICC=mpicc
 CFLAGS=-O0 -Wall -std=gnu11
 LDFLAGS=-lm -pthread
 
-all: calculate_loop_time mp_task_sim matrix_mul
+all: calculate_loop_time mp_task_sim
 
 calculate_loop_time: calculate_loop_time.c common.h
 	$(CC) $(CFLAGS) $(LDFLAGS) -o calculate_loop_time calculate_loop_time.c
@@ -14,8 +10,5 @@ calculate_loop_time: calculate_loop_time.c common.h
 mp_task_sim: mp_task_sim.c common.h
 	$(CC) $(CFLAGS) $(LDFLAGS) -o mp_task_sim mp_task_sim.c
 
-matrix_mul: matrix_mul.c
-	$(MPICC) $(CFLAGS) -o matrix_mul matrix_mul.c
-
 clean:
-	rm -rf calculate_loop_time mp_task_sim matrix_mul
+	rm -rf calculate_loop_time mp_task_sim
