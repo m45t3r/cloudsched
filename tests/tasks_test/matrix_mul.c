@@ -81,6 +81,7 @@ int main(int argc, char *argv[])
     printf("%lf\n", t_end - t_start);
   }
 
+  /*
   const long col_sum = N * (N-1) / 2;
   if(my_rank == MASTER) {
     for (int i = 0; i < N; ++i) {
@@ -90,6 +91,7 @@ int main(int argc, char *argv[])
     }
     printf("Matrix checking sucessful!\n");
   }
+  */
 
   MPI_Finalize();
   exit(EXIT_SUCCESS);
