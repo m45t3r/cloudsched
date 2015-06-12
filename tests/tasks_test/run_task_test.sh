@@ -27,7 +27,7 @@ function run_task_test() {
     echo "Resulting file: $result_file"
 
     for i in `seq $REPETITIONS`; do
-        echo "Testing $i/$REPETITIONS" | tee -a "$result_file"
+        echo "Testing $i/$REPETITIONS"
         mpirun -np $NUMBER_OF_INSTANCES -hostfile hostfile.txt ./matrix_mul 1024 | tee -a "$result_file"
         sleep 5
     done
