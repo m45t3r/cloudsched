@@ -1,0 +1,4 @@
+Algorithm,Expected,Calculated,Stdev
+fifo,1021.0,1006.71,3.21
+ltf,536.0,594.55,0.29
+rit,918.0,929.70,1.71
