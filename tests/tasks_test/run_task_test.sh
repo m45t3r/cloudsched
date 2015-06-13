@@ -23,7 +23,7 @@ function compile() {
 
 function run_task_test() {
     local vms=`sed '/^\s*#/d' hostfile.txt | wc -l`
-    local result_file="result`printf "%01d" $vms`.log"
+    local result_file="result`printf "%02d" $vms`.log"
     echo "Resulting file: $result_file"
 
     for i in `seq $REPETITIONS`; do
