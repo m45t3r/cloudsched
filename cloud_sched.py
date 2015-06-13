@@ -8,6 +8,7 @@ import logging
 import math
 import random
 import time
+import sys
 from pprint import pprint
 
 import numpy
@@ -318,13 +319,23 @@ def generate_schedule(tasks, task_schedule_alg, vm_schedule_alg, procs_per_vm, n
 
 
 if __name__ == "__main__":
+    try:
+        number_of_cpus = int(sys.argv[1])
+        number_of_vms = int(sys.argv[2])
+        if number_of_cpus <= 0 or number_of_vms <= 0:
+            raise ValueError
+    except (IndexError, ValueError):
+        usage = "usage: {} NUMBER_OF_CPUS NUMBER_OF_VMS".format(sys.argv[0])
+        sys.exit(usage)
+
     tasks = parse_swf_file("UniLu-Gaia-2014-2.swf")
     filtered_tasks = filter_tasks(tasks, 250, 300, 1, None)
 
     for task_schedule_alg in [first_in_first_out, largest_task_first, reduce_idle_time_conservative]:
         for vm_schedule_alg in [round_robin, minimal_current_makespan]:
             start = time.clock()
-            calculated_makespan = generate_schedule(filtered_tasks, task_schedule_alg, vm_schedule_alg, 32, 1)
+            calculated_makespan = generate_schedule(filtered_tasks, task_schedule_alg,
+                    vm_schedule_alg, number_of_cpus, number_of_vms)
             end = time.clock()
             print("{}/{} calculated makespan={}".format(task_schedule_alg.__name__,
                                                         vm_schedule_alg.__name__,
