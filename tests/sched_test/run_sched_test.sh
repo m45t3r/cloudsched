@@ -3,7 +3,7 @@
 set -eu
 
 TMPDIR=`mktemp -d`
-NUMBER_OF_CORES=32
+NUMBER_OF_CORES=`nproc`
 ONE_SECOND=500
 REPETITIONS=10
 
@@ -87,8 +87,10 @@ function run_test() {
 if [[ "$BASH_SOURCE" == "$0" ]]; then
     trap "clean_up; kill_children" SIGTERM SIGINT EXIT
 
+    echo "Running tests with $NUMBER_OF_CORES CPUs"
+
     echo "Calculating one second of processing time"
-    ONE_SECOND=`calculate_one_second`
+    #ONE_SECOND=`calculate_one_second`
     echo "ONE_SECOND=$ONE_SECOND"
 
     for trace_file in *.trace; do
