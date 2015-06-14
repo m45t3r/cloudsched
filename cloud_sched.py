@@ -280,13 +280,13 @@ def tasks_statistics(tasks, field):
             "stdev": stdev_data}
 
 
-def tasks_histogram(tasks, field, bins=10):
+def tasks_histogram(tasks, bins=10):
     data = []
     for task in tasks:
-        data.append(task[field])
+        data.append(get_task_run_time(task))
 
     pyplot.hist(data, bins)
-    pyplot.title("{} histogram".format(field))
+    pyplot.title("Task total run time histogram ({} bins)".format(bins))
     pyplot.xlabel("Value")
     pyplot.ylabel("Frequency")
     pyplot.show()
@@ -330,6 +330,8 @@ if __name__ == "__main__":
 
     tasks = parse_swf_file("UniLu-Gaia-2014-2.swf")
     filtered_tasks = filter_tasks(tasks, 250, 300, 1, None)
+
+    tasks_histogram(filtered_tasks, 50)
 
     for task_schedule_alg in [first_in_first_out, largest_task_first, reduce_idle_time_conservative]:
         for vm_schedule_alg in [round_robin, minimal_current_makespan]:
