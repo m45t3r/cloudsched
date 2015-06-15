@@ -1,0 +1,13 @@
+Algorithms,Time,Operation
+fifo-mcm,1021.0,Expected
+fifo-mcm,1006.71,Calculated
+fifo-rr,1021.0,Expected
+fifo-rr,1003.31,Calculated
+ltf-mcm,536.0,Expected
+ltf-mcm,594.55,Calculated
+ltf-rr,536.0,Expected
+ltf-rr,594.68,Calculated
+rit-mcm,918.0,Expected
+rit-mcm,929.70,Calculated
+rit-rr,918.0,Expected
+rit-rr,930.35,Calculated
