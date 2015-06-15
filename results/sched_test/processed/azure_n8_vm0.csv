@@ -1,0 +1,7 @@
+algorithm,expected,calculated,stdev
+fifo-mcm,1080.0,1025.38,2.20
+fifo-rr,1338.0,1247.34,3.92
+ltf-mcm,602.0,621.06,1.15
+ltf-rr,616.0,639.64,1.29
+rit-mcm,1083.0,1000.60,2.32
+rit-rr,1305.0,1209.09,3.08

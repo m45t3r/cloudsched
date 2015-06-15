@@ -12,7 +12,7 @@ with open(glob.glob("schedule_n*.log")[0], 'r') as schedule_file:
     makespans = re.findall("makespan=(.*)", schedule_file.read())
 
 print("algorithm,expected,calculated,stdev")
-for i, filename in enumerate(glob.glob("*.results")):
+for i, filename in enumerate(sorted(glob.glob("*.results"))):
     with open(filename, 'r') as result_file:
         results = [float(x) for x in result_file]
         mean = round(numpy.mean(results), ndigits=2)
