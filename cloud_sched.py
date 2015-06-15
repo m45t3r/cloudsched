@@ -334,7 +334,7 @@ if __name__ == "__main__":
     tasks_histogram(filtered_tasks, 50)
 
     for task_schedule_alg in [first_in_first_out, largest_task_first, reduce_idle_time_conservative]:
-        for vm_schedule_alg in [round_robin, minimal_current_makespan]:
+        for vm_schedule_alg in [minimal_current_makespan, round_robin]:
             start = time.clock()
             calculated_makespan = generate_schedule(filtered_tasks, task_schedule_alg,
                     vm_schedule_alg, number_of_cpus, number_of_vms)
