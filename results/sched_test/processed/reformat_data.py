@@ -7,10 +7,11 @@ fieldnames = ['Algorithms', 'Time', 'Operation']
 
 try:
     filename = sys.argv[1]
+    outfile = sys.argv[2]
 except IndexError:
-    sys.exit("usage: {} CSV_FILE".format(sys.argv[0]))
+    sys.exit("usage: {} CSV_FILE OUT_FILE".format(sys.argv[0]))
 
-with open(sys.argv[1], 'r') as original_file, open('reformated.csv', 'wb') as result_file:
+with open(filename, 'r') as original_file, open(outfile, 'wb') as result_file:
     csv_reader = csv.DictReader(original_file)
     csv_writer = csv.DictWriter(result_file, fieldnames=fieldnames)
     csv_writer.writeheader()
