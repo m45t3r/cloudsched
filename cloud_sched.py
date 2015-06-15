@@ -287,7 +287,7 @@ def tasks_histogram(tasks, bins=10):
 
     pyplot.hist(data, bins)
     pyplot.title("Task total run time histogram ({} bins)".format(bins))
-    pyplot.xlabel("Value")
+    pyplot.xlabel("Run time (s)")
     pyplot.ylabel("Frequency")
     pyplot.show()
 
