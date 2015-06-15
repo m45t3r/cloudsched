@@ -1,6 +1,8 @@
+#!/usr/bin/R -f
+
 library(ggplot2)
 
-dirpath <- "~/Dropbox/Doctorate/Results/cloudsched/results/sched_test/processed"
+dirpath <- "."
 setwd(paste(dirpath, sep=""))
 
 google <- read.table(paste("./googlece_n32_temp.csv",sep=""),sep = ",",header = TRUE)
