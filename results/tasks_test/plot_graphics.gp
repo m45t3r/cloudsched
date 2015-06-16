@@ -30,8 +30,8 @@ googlece = "summary_googlece.csv"
 
 set output "summary_azure.pdf"
 set yrange [0:600]
-plot azure using 1:2 title "Expected Time (s)" with lines, azure using 1:3 title "Measured Time (s)" with lines, azure using 1:3:4 notitle with yerrorbars lc rgb 'black' pt 1 lw 2
+plot azure using 1:2 title "Expected Time" with lines, azure using 1:3 title "Measured Time" with lines, azure using 1:3:4 notitle with yerrorbars lc rgb 'black' pt 1 lw 2
 
 set yrange [0:450]
 set output "summary_googlece.pdf"
-plot googlece using 1:2 title "Expected Time (s)" with lines, googlece using 1:3 title "Measured Time (s)" with lines, googlece using 1:3:4 notitle with yerrorbars lc rgb 'black' pt 1 lw 2
+plot googlece using 1:2 title "Expected Time" with lines, googlece using 1:3 title "Measured Time" with lines, googlece using 1:3:4 notitle with yerrorbars lc rgb 'black' pt 1 lw 2

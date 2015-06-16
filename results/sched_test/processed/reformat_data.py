@@ -17,4 +17,4 @@ with open(filename, 'r') as original_file, open(outfile, 'wb') as result_file:
     csv_writer.writeheader()
     for row in csv_reader:
         csv_writer.writerow({'Algorithms': row['algorithm'], 'Time': row['expected'], 'Operation': 'Expected'})
-        csv_writer.writerow({'Algorithms': row['algorithm'], 'Time': row['calculated'], 'Operation': 'Calculated'})
+        csv_writer.writerow({'Algorithms': row['algorithm'], 'Time': row['calculated'], 'Operation': 'Measured'})
