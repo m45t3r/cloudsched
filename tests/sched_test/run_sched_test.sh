@@ -27,7 +27,15 @@ function unlock() {
 }
 
 function readcount() {
-    while ! cat $TMPDIR/count; do :; done
+    # Very ugly, but faster than cat, subshells etc.
+    local val
+    exec 3>&2
+    exec 2>/dev/null
+    while [ x$val = x ] ; do
+        read val < $TMPDIR/count
+    done
+    exec 2>&3
+    echo $val
 }
 
 function increasecount() {
